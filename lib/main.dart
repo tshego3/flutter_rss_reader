@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_rss_reader/viewmodels/feed_viewmodel.dart';
-import 'package:flutter_rss_reader/views/feed_view.dart';
-import 'package:provider/provider.dart';
+import 'views/feed_view.dart';
 
 void main() {
   runApp(const MainApp());
@@ -10,18 +8,16 @@ void main() {
 class MainApp extends StatelessWidget {
   const MainApp({super.key});
 
+  static const appTitle = 'RSS Reader';
+
   @override
   Widget build(BuildContext context) {
-    return MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => FeedViewModel()),
-      ],
-      child: MaterialApp(
-        home: FeedView(),
-        themeMode: ThemeMode.system,
-        theme: ThemeData.light(),
-        darkTheme: ThemeData.dark(),
-      ),
+    return MaterialApp(
+      title: appTitle,
+      themeMode: ThemeMode.system,
+      theme: ThemeData.light(),
+      darkTheme: ThemeData.dark(),
+      home: FeedView(title: appTitle),
     );
   }
 }

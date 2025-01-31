@@ -1,24 +1,23 @@
 import 'package:flutter/foundation.dart';
-import 'package:flutter_rss_reader/models/feed_model.dart';
-import 'package:flutter_rss_reader/services/feed_service.dart';
+import '../models/feed_model.dart';
+import '../services/feed_service.dart';
 
 class FeedViewModel extends ChangeNotifier {
   final FeedService _feedService  = FeedService();
   List<Feed>        _feeds        = [];
-  bool              _loading      = false;
 
-  List<Feed>        get feeds     => _feeds;
-  bool              get loading   => _loading;
-
-  FeedViewModel() {
-    fetchFeeds();
+  Future<List<Feed>> fetchNewsFeedsAsync() async {
+    _feeds    = await _feedService.fetchFeeds('https://mybroadband.co.za/news/feed');
+    return _feeds;
   }
 
-  Future<void> fetchFeeds() async {
-    _loading = true;
-    notifyListeners();
-    _feeds    = await _feedService.fetchFeeds();
-    _loading  = false;
-    notifyListeners();
+  Future<List<Feed>> fetchSportFeedsAsync() async {
+    _feeds    = await _feedService.fetchFeeds('https://topauto.co.za/news/feed/');
+    return _feeds;
+  }
+
+  Future<List<Feed>> fetchTechFeedsAsync() async {
+    _feeds    = await _feedService.fetchFeeds('https://techcrunch.com/feed/');
+    return _feeds;
   }
 }

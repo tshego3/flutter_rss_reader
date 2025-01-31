@@ -2,12 +2,12 @@ import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
 import 'package:xml/xml.dart' as xml;
-import 'package:flutter_rss_reader/models/feed_model.dart';
+import '../models/feed_model.dart';
 
 class FeedService {
-  Future<List<Feed>> fetchFeeds() async {
+  Future<List<Feed>> fetchFeeds(String url) async {
     final response =
-        await http.get(Uri.parse('https://api.codetabs.com/v1/proxy/?quest=https://mybroadband.co.za/news/feed'));
+        await http.get(Uri.parse('https://api.codetabs.com/v1/proxy/?quest=$url'));
 
     if (response.statusCode == 200) {
       try {
@@ -32,7 +32,8 @@ class FeedService {
       }
     } else {
       if (kDebugMode) {
-        print('Failed to load feed: $response.body');
+        String responseBody = response.body;
+        print('Failed to load feed: \n$responseBody');
       }
       return [];
     }
