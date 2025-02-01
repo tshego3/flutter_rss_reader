@@ -16,6 +16,8 @@ class FeedView extends StatefulWidget {
 class _FeedViewState extends State<FeedView> {
   late Future<List<Feed>> futureFeeds;
   int _selectedIndex = 0;
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = "";
 
   @override
   void initState() {
@@ -23,18 +25,25 @@ class _FeedViewState extends State<FeedView> {
     futureFeeds = FeedViewModel().fetchNewsFeedsAsync();
   }
 
-  static List<Widget> _widgetOptions(BuildContext context, List<Feed> feeds) =>
+  static List<Widget> _widgetOptions(
+          BuildContext context, List<Feed> feeds, String searchQuery) =>
       <Widget>[
-        _buildListView(context, feeds),
-        _buildListView(context, feeds),
-        _buildListView(context, feeds),
+        _buildListView(context, feeds, searchQuery),
+        _buildListView(context, feeds, searchQuery),
+        _buildListView(context, feeds, searchQuery),
       ];
 
-  static ListView _buildListView(BuildContext context, List<Feed> feeds) {
+  static ListView _buildListView(
+      BuildContext context, List<Feed> feeds, String searchQuery) {
+    final filteredFeeds = feeds
+        .where((feed) =>
+            feed.title.toLowerCase().contains(searchQuery.toLowerCase()) ||
+            feed.description.toLowerCase().contains(searchQuery.toLowerCase()))
+        .toList();
     return ListView.builder(
-      itemCount: feeds.length,
+      itemCount: filteredFeeds.length,
       itemBuilder: (context, index) {
-        final feed = feeds[index];
+        final feed = filteredFeeds[index];
         return ListTile(
           leading: Icon(Icons.rss_feed),
           title: Text(feed.title),
@@ -43,7 +52,8 @@ class _FeedViewState extends State<FeedView> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => FeedDetailView(feed: feeds[index]),
+                builder: (context) =>
+                    FeedDetailView(feed: filteredFeeds[index]),
               ),
             );
           },
@@ -84,6 +94,27 @@ class _FeedViewState extends State<FeedView> {
             );
           },
         ),
+        bottom: PreferredSize(
+          preferredSize: Size.fromHeight(kToolbarHeight),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: 'Search...',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8.0),
+                ),
+                prefixIcon: Icon(Icons.search),
+              ),
+              onChanged: (value) {
+                setState(() {
+                  _searchQuery = value;
+                });
+              },
+            ),
+          ),
+        ),
       ),
       body: FutureBuilder<List<Feed>>(
         future: futureFeeds,
@@ -94,7 +125,8 @@ class _FeedViewState extends State<FeedView> {
             );
           } else if (snapshot.hasData) {
             return Center(
-              child: _widgetOptions(context, snapshot.data!)[_selectedIndex],
+              child: _widgetOptions(
+                  context, snapshot.data!, _searchQuery)[_selectedIndex],
             );
           } else {
             return const Center(
