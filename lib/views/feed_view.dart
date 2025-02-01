@@ -1,5 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_rss_reader/views/settings_view.dart';
+import '../helpers/settings_helper.dart';
 import '../viewmodels/feed_viewmodel.dart';
 import '../models/feed_model.dart';
 import 'feed_detail_view.dart';
@@ -13,16 +15,21 @@ class FeedView extends StatefulWidget {
   State<FeedView> createState() => _FeedViewState();
 }
 
-class _FeedViewState extends State<FeedView> {
-  late Future<List<Feed>> futureFeeds;
+class _FeedViewState extends State<FeedView>
+    with SingleTickerProviderStateMixin {
   int _selectedIndex = 0;
-  final TextEditingController _searchController = TextEditingController();
   String _searchQuery = "";
+  late TabController _tabController;
+  late Future<List<Feed>> _futureFeeds;
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    futureFeeds = FeedViewModel().fetchNewsFeedsAsync();
+    SettingsHelper.saveFeedsToPrefs('rssFeeds',
+        'https://tshego3.github.io/JSRSSFeed/assets/dist/json/feeds.json');
+    _futureFeeds = FeedViewModel().fetchNewsFeedsAsync();
+    _tabController = TabController(length: 3, vsync: this);
   }
 
   static List<Widget> _widgetOptions(
@@ -67,13 +74,13 @@ class _FeedViewState extends State<FeedView> {
       _selectedIndex = index;
       switch (_selectedIndex) {
         case 0:
-          futureFeeds = FeedViewModel().fetchNewsFeedsAsync();
+          _futureFeeds = FeedViewModel().fetchNewsFeedsAsync();
           break;
         case 1:
-          futureFeeds = FeedViewModel().fetchSportFeedsAsync();
+          _futureFeeds = FeedViewModel().fetchSportFeedsAsync();
           break;
         case 2:
-          futureFeeds = FeedViewModel().fetchTechFeedsAsync();
+          _futureFeeds = FeedViewModel().fetchTechFeedsAsync();
           break;
       }
     });
@@ -95,38 +102,51 @@ class _FeedViewState extends State<FeedView> {
           },
         ),
         bottom: PreferredSize(
-          preferredSize: Size.fromHeight(kToolbarHeight),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8.0),
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: 'Search...',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8.0),
+          preferredSize: Size.fromHeight(kToolbarHeight + kTextTabBarHeight),
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                child: TextField(
+                  controller: _searchController,
+                  decoration: InputDecoration(
+                    hintText: 'Search...',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8.0),
+                    ),
+                    prefixIcon: Icon(Icons.search),
+                  ),
+                  onChanged: (value) {
+                    setState(() {
+                      _searchQuery = value;
+                    });
+                  },
                 ),
-                prefixIcon: Icon(Icons.search),
               ),
-              onChanged: (value) {
-                setState(() {
-                  _searchQuery = value;
-                });
-              },
-            ),
+              TabBar(
+                controller: _tabController,
+                tabs: const <Tab>[
+                  Tab(text: 'News'),
+                  Tab(text: 'Sport'),
+                  Tab(text: 'Tech'),
+                ],
+                onTap: _onItemTapped,
+              ),
+            ],
           ),
         ),
       ),
       body: FutureBuilder<List<Feed>>(
-        future: futureFeeds,
+        future: _futureFeeds,
         builder: (context, snapshot) {
           if (snapshot.hasError) {
             return const Center(
               child: Text('An error has occurred!'),
             );
           } else if (snapshot.hasData) {
-            return Center(
-              child: _widgetOptions(
-                  context, snapshot.data!, _searchQuery)[_selectedIndex],
+            return TabBarView(
+              controller: _tabController,
+              children: _widgetOptions(context, snapshot.data!, _searchQuery),
             );
           } else {
             return const Center(
@@ -140,14 +160,16 @@ class _FeedViewState extends State<FeedView> {
           setState(() {
             switch (_selectedIndex) {
               case 0:
-                futureFeeds = FeedViewModel().fetchNewsFeedsAsync(bypass: true);
+                _futureFeeds =
+                    FeedViewModel().fetchNewsFeedsAsync(bypass: true);
                 break;
               case 1:
-                futureFeeds =
+                _futureFeeds =
                     FeedViewModel().fetchSportFeedsAsync(bypass: true);
                 break;
               case 2:
-                futureFeeds = FeedViewModel().fetchTechFeedsAsync(bypass: true);
+                _futureFeeds =
+                    FeedViewModel().fetchTechFeedsAsync(bypass: true);
                 break;
             }
           });
@@ -182,6 +204,18 @@ class _FeedViewState extends State<FeedView> {
               onTap: () {
                 _onItemTapped(2);
                 Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.settings),
+              title: const Text('Settings'),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => SettingsView(),
+                  ),
+                );
               },
             ),
             ListTile(
