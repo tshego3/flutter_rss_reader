@@ -51,7 +51,7 @@ class _SettingsViewState extends State<SettingsView> {
             ElevatedButton(
               onPressed: () async {
                 await SettingsHelper.saveFeedsToPrefs(
-                    'rssFeeds',
+                    'rssFeedsLink',
                     _rssFeedController.text != ''
                         ? _rssFeedController.text
                         : 'https://tshego3.github.io/JSRSSFeed/assets/dist/json/feeds.json');

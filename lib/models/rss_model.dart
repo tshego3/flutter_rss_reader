@@ -26,7 +26,7 @@ class RssModel {
     return RssModel(
       id: json['id'],
       title: json['title'],
-      url: json['url'],
+      url: json['url'] ?? '',
       categories: (json['categories'] as List<dynamic>?)
               ?.map((category) => RssCategoryModel.fromJson(category))
               .toList() ??

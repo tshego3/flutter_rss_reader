@@ -26,8 +26,7 @@ class _FeedViewState extends State<FeedView>
   @override
   void initState() {
     super.initState();
-    SettingsHelper.saveFeedsToPrefs('rssFeeds',
-        'https://tshego3.github.io/JSRSSFeed/assets/dist/json/feeds.json');
+    SettingsHelper.loadSettings();
     _futureFeeds = FeedViewModel().fetchNewsFeedsAsync();
     _tabController = TabController(length: 3, vsync: this);
   }
