@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import '../viewmodels/feed_viewmodel.dart';
 import '../models/feed_model.dart';
@@ -24,64 +25,32 @@ class _FeedViewState extends State<FeedView> {
 
   static List<Widget> _widgetOptions(BuildContext context, List<Feed> feeds) =>
       <Widget>[
-        ListView.builder(
-          itemCount: feeds.length,
-          itemBuilder: (context, index) {
-            final feed = feeds[index];
-            return ListTile(
-              leading: Icon(Icons.rss_feed),
-              title: Text(feed.title),
-              subtitle: Text(feed.description),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => FeedDetailView(feed: feeds[index]),
-                  ),
-                );
-              },
-            );
-          },
-        ),
-        ListView.builder(
-          itemCount: feeds.length,
-          itemBuilder: (context, index) {
-            final feed = feeds[index];
-            return ListTile(
-              leading: Icon(Icons.rss_feed),
-              title: Text(feed.title),
-              subtitle: Text(feed.description),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => FeedDetailView(feed: feeds[index]),
-                  ),
-                );
-              },
-            );
-          },
-        ),
-        ListView.builder(
-          itemCount: feeds.length,
-          itemBuilder: (context, index) {
-            final feed = feeds[index];
-            return ListTile(
-              leading: Icon(Icons.rss_feed),
-              title: Text(feed.title),
-              subtitle: Text(feed.description),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => FeedDetailView(feed: feeds[index]),
-                  ),
-                );
-              },
-            );
-          },
-        ),
+        _buildListView(context, feeds),
+        _buildListView(context, feeds),
+        _buildListView(context, feeds),
       ];
+
+  static ListView _buildListView(BuildContext context, List<Feed> feeds) {
+    return ListView.builder(
+      itemCount: feeds.length,
+      itemBuilder: (context, index) {
+        final feed = feeds[index];
+        return ListTile(
+          leading: Icon(Icons.rss_feed),
+          title: Text(feed.title),
+          subtitle: Text(feed.description),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => FeedDetailView(feed: feeds[index]),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
 
   void _onItemTapped(int index) {
     setState(() {
@@ -139,13 +108,14 @@ class _FeedViewState extends State<FeedView> {
           setState(() {
             switch (_selectedIndex) {
               case 0:
-                futureFeeds = FeedViewModel().fetchNewsFeedsAsync();
+                futureFeeds = FeedViewModel().fetchNewsFeedsAsync(bypass: true);
                 break;
               case 1:
-                futureFeeds = FeedViewModel().fetchSportFeedsAsync();
+                futureFeeds =
+                    FeedViewModel().fetchSportFeedsAsync(bypass: true);
                 break;
               case 2:
-                futureFeeds = FeedViewModel().fetchTechFeedsAsync();
+                futureFeeds = FeedViewModel().fetchTechFeedsAsync(bypass: true);
                 break;
             }
           });
@@ -180,6 +150,14 @@ class _FeedViewState extends State<FeedView> {
               onTap: () {
                 _onItemTapped(2);
                 Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.logout),
+              title: const Text('Logout'),
+              onTap: () async {
+                await FeedViewModel().clearSharedPreferencesAsync();
+                exit(0);
               },
             ),
           ],
