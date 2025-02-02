@@ -21,7 +21,9 @@ class FeedView extends StatefulWidget {
 
 class _FeedViewState extends State<FeedView> with TickerProviderStateMixin {
   int _selectedIndex = 0;
+  int _selectedIndexTabBar = 0;
   int _selectedIndexBottomNavBar = 0;
+
   String _searchQuery = "";
   late TabController _tabController;
   late Future<List<FeedModel>> _futureFeeds;
@@ -78,11 +80,24 @@ class _FeedViewState extends State<FeedView> with TickerProviderStateMixin {
             FeedViewModel.fetchFeedsAsync(widget.rssFeeds[_selectedIndex]);
       } else {
         _futureFeeds = FeedViewModel.fetchCategoryFeedsAsync(
-            widget.rssFeeds[_selectedIndex].categories[0]);
+            widget.rssFeeds[_selectedIndex].categories[_selectedIndexTabBar]);
+        _tabController.dispose();
         _tabController = TabController(
             length: widget.rssFeeds[_selectedIndex].categories.length,
             vsync: this);
       }
+    });
+  }
+
+  void _onItemTappedTabBar(int index) {
+    setState(() {
+      _selectedIndexTabBar = index;
+      _futureFeeds = FeedViewModel.fetchCategoryFeedsAsync(
+          widget.rssFeeds[_selectedIndex].categories[_selectedIndexTabBar]);
+      _tabController.dispose();
+      _tabController = TabController(
+          length: widget.rssFeeds[_selectedIndex].categories.length,
+          vsync: this);
     });
   }
 
@@ -96,7 +111,8 @@ class _FeedViewState extends State<FeedView> with TickerProviderStateMixin {
                 FeedViewModel.fetchFeedsAsync(widget.rssFeeds[_selectedIndex]);
           } else {
             _futureFeeds = FeedViewModel.fetchCategoryFeedsAsync(
-                widget.rssFeeds[_selectedIndex].categories[0]);
+                widget.rssFeeds[_selectedIndex].categories[_selectedIndexTabBar]);
+            _tabController.dispose();
             _tabController = TabController(
                 length: widget.rssFeeds[_selectedIndex].categories.length,
                 vsync: this);
@@ -158,6 +174,7 @@ class _FeedViewState extends State<FeedView> with TickerProviderStateMixin {
                       tabs: widget.rssFeeds[_selectedIndex].categories
                           .map((category) => Tab(text: category.title))
                           .toList(),
+                      onTap: _onItemTappedTabBar,
                     ),
             ],
           ),
@@ -196,7 +213,8 @@ class _FeedViewState extends State<FeedView> with TickerProviderStateMixin {
                   bypass: true);
             } else {
               _futureFeeds = FeedViewModel.fetchCategoryFeedsAsync(
-                  widget.rssFeeds[_selectedIndex].categories[0],
+                  widget.rssFeeds[_selectedIndex]
+                      .categories[_selectedIndexTabBar],
                   bypass: true);
             }
           });
