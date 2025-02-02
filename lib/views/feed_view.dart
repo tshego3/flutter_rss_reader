@@ -19,9 +19,9 @@ class FeedView extends StatefulWidget {
   State<FeedView> createState() => _FeedViewState();
 }
 
-class _FeedViewState extends State<FeedView>
-    with SingleTickerProviderStateMixin {
+class _FeedViewState extends State<FeedView> with TickerProviderStateMixin {
   int _selectedIndex = 0;
+  int _selectedIndexBottomNavBar = 0;
   String _searchQuery = "";
   late TabController _tabController;
   late Future<List<FeedModel>> _futureFeeds;
@@ -31,16 +31,12 @@ class _FeedViewState extends State<FeedView>
   void initState() {
     super.initState();
     _futureFeeds = FeedViewModel.fetchFeedsAsync(widget.rssFeeds[0]);
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(
+        length: widget.rssFeeds[0].categories.isEmpty
+            ? 1
+            : widget.rssFeeds[0].categories.length,
+        vsync: this);
   }
-
-  static List<Widget> _widgetOptions(
-          BuildContext context, List<FeedModel> feeds, String searchQuery) =>
-      <Widget>[
-        _buildListView(context, feeds, searchQuery),
-        _buildListView(context, feeds, searchQuery),
-        _buildListView(context, feeds, searchQuery),
-      ];
 
   static ListView _buildListView(
       BuildContext context, List<FeedModel> feeds, String searchQuery) {
@@ -53,19 +49,22 @@ class _FeedViewState extends State<FeedView>
       itemCount: filteredFeeds.length,
       itemBuilder: (context, index) {
         final feed = filteredFeeds[index];
-        return ListTile(
-          leading: Icon(Icons.rss_feed),
-          title: Text(feed.title),
-          subtitle: Text(feed.description),
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) =>
-                    FeedDetailView(feed: filteredFeeds[index]),
-              ),
-            );
-          },
+        return Card(
+          child: ListTile(
+            leading: Icon(Icons.notifications),
+            title: Text(feed.title),
+            subtitle: Text(feed.description),
+            trailing: Icon(Icons.more_vert),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) =>
+                      FeedDetailView(feed: filteredFeeds[index]),
+                ),
+              );
+            },
+          ),
         );
       },
     );
@@ -74,15 +73,42 @@ class _FeedViewState extends State<FeedView>
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
-      switch (_selectedIndex) {
+      if (widget.rssFeeds[_selectedIndex].categories.isEmpty) {
+        _futureFeeds =
+            FeedViewModel.fetchFeedsAsync(widget.rssFeeds[_selectedIndex]);
+      } else {
+        _futureFeeds = FeedViewModel.fetchCategoryFeedsAsync(
+            widget.rssFeeds[_selectedIndex].categories[0]);
+        _tabController = TabController(
+            length: widget.rssFeeds[_selectedIndex].categories.length,
+            vsync: this);
+      }
+    });
+  }
+
+  void _onItemTappedBottomNavBar(int index) {
+    setState(() {
+      _selectedIndexBottomNavBar = index;
+      switch (_selectedIndexBottomNavBar) {
         case 0:
-          _futureFeeds = FeedViewModel.fetchFeedsAsync(widget.rssFeeds[0]);
+          if (widget.rssFeeds[_selectedIndex].categories.isEmpty) {
+            _futureFeeds =
+                FeedViewModel.fetchFeedsAsync(widget.rssFeeds[_selectedIndex]);
+          } else {
+            _futureFeeds = FeedViewModel.fetchCategoryFeedsAsync(
+                widget.rssFeeds[_selectedIndex].categories[0]);
+            _tabController = TabController(
+                length: widget.rssFeeds[_selectedIndex].categories.length,
+                vsync: this);
+          }
           break;
         case 1:
-          _futureFeeds = FeedViewModel.fetchFeedsAsync(widget.rssFeeds[1]);
-          break;
-        case 2:
-          _futureFeeds = FeedViewModel.fetchFeedsAsync(widget.rssFeeds[2]);
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => SettingsView(),
+            ),
+          );
           break;
       }
     });
@@ -125,15 +151,14 @@ class _FeedViewState extends State<FeedView>
                   },
                 ),
               ),
-              TabBar(
-                controller: _tabController,
-                tabs: <Tab>[
-                  Tab(text: widget.rssFeeds[0].title),
-                  Tab(text: widget.rssFeeds[1].title),
-                  Tab(text: widget.rssFeeds[2].title),
-                ],
-                onTap: _onItemTapped,
-              ),
+              widget.rssFeeds[_selectedIndex].categories.isEmpty
+                  ? Container()
+                  : TabBar(
+                      controller: _tabController,
+                      tabs: widget.rssFeeds[_selectedIndex].categories
+                          .map((category) => Tab(text: category.title))
+                          .toList(),
+                    ),
             ],
           ),
         ),
@@ -146,10 +171,15 @@ class _FeedViewState extends State<FeedView>
               child: Text(Constants.txtAnErrorHasOccurred),
             );
           } else if (snapshot.hasData) {
-            return TabBarView(
-              controller: _tabController,
-              children: _widgetOptions(context, snapshot.data!, _searchQuery),
-            );
+            return widget.rssFeeds[_selectedIndex].categories.isEmpty
+                ? _buildListView(context, snapshot.data!, _searchQuery)
+                : TabBarView(
+                    controller: _tabController,
+                    children: widget.rssFeeds[_selectedIndex].categories
+                        .map((category) => _buildListView(
+                            context, snapshot.data!, _searchQuery))
+                        .toList(),
+                  );
           } else {
             return const Center(
               child: CircularProgressIndicator(),
@@ -160,19 +190,14 @@ class _FeedViewState extends State<FeedView>
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           setState(() {
-            switch (_selectedIndex) {
-              case 0:
-                _futureFeeds = FeedViewModel.fetchFeedsAsync(widget.rssFeeds[0],
-                    bypass: true);
-                break;
-              case 1:
-                _futureFeeds = FeedViewModel.fetchFeedsAsync(widget.rssFeeds[1],
-                    bypass: true);
-                break;
-              case 2:
-                _futureFeeds = FeedViewModel.fetchFeedsAsync(widget.rssFeeds[2],
-                    bypass: true);
-                break;
+            if (widget.rssFeeds[_selectedIndex].categories.isEmpty) {
+              _futureFeeds = FeedViewModel.fetchFeedsAsync(
+                  widget.rssFeeds[_selectedIndex],
+                  bypass: true);
+            } else {
+              _futureFeeds = FeedViewModel.fetchCategoryFeedsAsync(
+                  widget.rssFeeds[_selectedIndex].categories[0],
+                  bypass: true);
             }
           });
         },
@@ -181,32 +206,16 @@ class _FeedViewState extends State<FeedView>
       drawer: Drawer(
         child: ListView(
           children: [
-            ListTile(
-              leading: Icon(Icons.newspaper),
-              title: Text(widget.rssFeeds[0].title),
-              selected: _selectedIndex == 0,
-              onTap: () {
-                _onItemTapped(0);
-                Navigator.pop(context);
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.sports_score),
-              title: Text(widget.rssFeeds[1].title),
-              selected: _selectedIndex == 1,
-              onTap: () {
-                _onItemTapped(1);
-                Navigator.pop(context);
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.computer),
-              title: Text(widget.rssFeeds[2].title),
-              selected: _selectedIndex == 2,
-              onTap: () {
-                _onItemTapped(2);
-                Navigator.pop(context);
-              },
+            ...widget.rssFeeds.map(
+              (rss) => ListTile(
+                leading: Icon(Icons.rss_feed),
+                title: Text(rss.title),
+                selected: _selectedIndex == widget.rssFeeds.indexOf(rss),
+                onTap: () {
+                  _onItemTapped(widget.rssFeeds.indexOf(rss));
+                  Navigator.pop(context);
+                },
+              ),
             ),
             ListTile(
               leading: Icon(Icons.settings),
@@ -235,19 +244,15 @@ class _FeedViewState extends State<FeedView>
         items: <BottomNavigationBarItem>[
           BottomNavigationBarItem(
             icon: Icon(Icons.newspaper),
-            label: widget.rssFeeds[0].title,
+            label: Constants.txtNews,
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.sports_score),
-            label: widget.rssFeeds[1].title,
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.computer),
-            label: widget.rssFeeds[2].title,
+            icon: Icon(Icons.settings),
+            label: Constants.txtSettings,
           ),
         ],
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
+        currentIndex: _selectedIndexBottomNavBar,
+        onTap: _onItemTappedBottomNavBar,
       ),
     );
   }

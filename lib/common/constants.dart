@@ -11,6 +11,7 @@ class Constants {
   static const String txtAppTitle = 'RSS Reader';
   static const String txtLogout = 'Logout';
   static const String txtSave = 'Save';
+  static const String txtNews = 'News';
   static const String txtSettings = 'Settings';
   static const String txtSearch = 'Search...';
   static const String txtSystemThemee = 'System Theme';
