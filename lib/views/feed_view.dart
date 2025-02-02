@@ -1,15 +1,19 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:flutter_rss_reader/views/settings_view.dart';
+import '../common/constants.dart';
 import '../helpers/settings_helper.dart';
+import '../models/rss_model.dart';
 import '../viewmodels/feed_viewmodel.dart';
 import '../models/feed_model.dart';
 import 'feed_detail_view.dart';
+import 'settings_view.dart';
 
 class FeedView extends StatefulWidget {
-  const FeedView({super.key, required this.title});
+  const FeedView({super.key, required this.title, required this.rssFeeds});
 
   final String title;
+  final List<RssModel> rssFeeds;
 
   @override
   State<FeedView> createState() => _FeedViewState();
@@ -20,19 +24,18 @@ class _FeedViewState extends State<FeedView>
   int _selectedIndex = 0;
   String _searchQuery = "";
   late TabController _tabController;
-  late Future<List<Feed>> _futureFeeds;
+  late Future<List<FeedModel>> _futureFeeds;
   final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    SettingsHelper.loadSettings();
-    _futureFeeds = FeedViewModel().fetchNewsFeedsAsync();
+    _futureFeeds = FeedViewModel.fetchFeedsAsync(widget.rssFeeds[0]);
     _tabController = TabController(length: 3, vsync: this);
   }
 
   static List<Widget> _widgetOptions(
-          BuildContext context, List<Feed> feeds, String searchQuery) =>
+          BuildContext context, List<FeedModel> feeds, String searchQuery) =>
       <Widget>[
         _buildListView(context, feeds, searchQuery),
         _buildListView(context, feeds, searchQuery),
@@ -40,7 +43,7 @@ class _FeedViewState extends State<FeedView>
       ];
 
   static ListView _buildListView(
-      BuildContext context, List<Feed> feeds, String searchQuery) {
+      BuildContext context, List<FeedModel> feeds, String searchQuery) {
     final filteredFeeds = feeds
         .where((feed) =>
             feed.title.toLowerCase().contains(searchQuery.toLowerCase()) ||
@@ -73,13 +76,13 @@ class _FeedViewState extends State<FeedView>
       _selectedIndex = index;
       switch (_selectedIndex) {
         case 0:
-          _futureFeeds = FeedViewModel().fetchNewsFeedsAsync();
+          _futureFeeds = FeedViewModel.fetchFeedsAsync(widget.rssFeeds[0]);
           break;
         case 1:
-          _futureFeeds = FeedViewModel().fetchSportFeedsAsync();
+          _futureFeeds = FeedViewModel.fetchFeedsAsync(widget.rssFeeds[1]);
           break;
         case 2:
-          _futureFeeds = FeedViewModel().fetchTechFeedsAsync();
+          _futureFeeds = FeedViewModel.fetchFeedsAsync(widget.rssFeeds[2]);
           break;
       }
     });
@@ -109,7 +112,7 @@ class _FeedViewState extends State<FeedView>
                 child: TextField(
                   controller: _searchController,
                   decoration: InputDecoration(
-                    hintText: 'Search...',
+                    hintText: Constants.txtSearch,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8.0),
                     ),
@@ -124,10 +127,10 @@ class _FeedViewState extends State<FeedView>
               ),
               TabBar(
                 controller: _tabController,
-                tabs: const <Tab>[
-                  Tab(text: 'News'),
-                  Tab(text: 'Sport'),
-                  Tab(text: 'Tech'),
+                tabs: <Tab>[
+                  Tab(text: widget.rssFeeds[0].title),
+                  Tab(text: widget.rssFeeds[1].title),
+                  Tab(text: widget.rssFeeds[2].title),
                 ],
                 onTap: _onItemTapped,
               ),
@@ -135,12 +138,12 @@ class _FeedViewState extends State<FeedView>
           ),
         ),
       ),
-      body: FutureBuilder<List<Feed>>(
+      body: FutureBuilder<List<FeedModel>>(
         future: _futureFeeds,
         builder: (context, snapshot) {
           if (snapshot.hasError) {
             return const Center(
-              child: Text('An error has occurred!'),
+              child: Text(Constants.txtAnErrorHasOccurred),
             );
           } else if (snapshot.hasData) {
             return TabBarView(
@@ -159,16 +162,16 @@ class _FeedViewState extends State<FeedView>
           setState(() {
             switch (_selectedIndex) {
               case 0:
-                _futureFeeds =
-                    FeedViewModel().fetchNewsFeedsAsync(bypass: true);
+                _futureFeeds = FeedViewModel.fetchFeedsAsync(widget.rssFeeds[0],
+                    bypass: true);
                 break;
               case 1:
-                _futureFeeds =
-                    FeedViewModel().fetchSportFeedsAsync(bypass: true);
+                _futureFeeds = FeedViewModel.fetchFeedsAsync(widget.rssFeeds[1],
+                    bypass: true);
                 break;
               case 2:
-                _futureFeeds =
-                    FeedViewModel().fetchTechFeedsAsync(bypass: true);
+                _futureFeeds = FeedViewModel.fetchFeedsAsync(widget.rssFeeds[2],
+                    bypass: true);
                 break;
             }
           });
@@ -180,7 +183,7 @@ class _FeedViewState extends State<FeedView>
           children: [
             ListTile(
               leading: Icon(Icons.newspaper),
-              title: const Text('News'),
+              title: Text(widget.rssFeeds[0].title),
               selected: _selectedIndex == 0,
               onTap: () {
                 _onItemTapped(0);
@@ -189,7 +192,7 @@ class _FeedViewState extends State<FeedView>
             ),
             ListTile(
               leading: Icon(Icons.sports_score),
-              title: const Text('Sport'),
+              title: Text(widget.rssFeeds[1].title),
               selected: _selectedIndex == 1,
               onTap: () {
                 _onItemTapped(1);
@@ -198,7 +201,7 @@ class _FeedViewState extends State<FeedView>
             ),
             ListTile(
               leading: Icon(Icons.computer),
-              title: const Text('Tech'),
+              title: Text(widget.rssFeeds[2].title),
               selected: _selectedIndex == 2,
               onTap: () {
                 _onItemTapped(2);
@@ -207,7 +210,7 @@ class _FeedViewState extends State<FeedView>
             ),
             ListTile(
               leading: Icon(Icons.settings),
-              title: const Text('Settings'),
+              title: const Text(Constants.txtSettings),
               onTap: () {
                 Navigator.push(
                   context,
@@ -219,9 +222,9 @@ class _FeedViewState extends State<FeedView>
             ),
             ListTile(
               leading: Icon(Icons.logout),
-              title: const Text('Logout'),
+              title: const Text(Constants.txtLogout),
               onTap: () async {
-                await FeedViewModel().clearSharedPreferencesAsync();
+                await SettingsHelper.clearSettingsFromSharedPreferences();
                 exit(0);
               },
             ),
@@ -229,18 +232,18 @@ class _FeedViewState extends State<FeedView>
         ),
       ),
       bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
+        items: <BottomNavigationBarItem>[
           BottomNavigationBarItem(
             icon: Icon(Icons.newspaper),
-            label: 'News',
+            label: widget.rssFeeds[0].title,
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.sports_score),
-            label: 'Sport',
+            label: widget.rssFeeds[1].title,
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.computer),
-            label: 'Tech',
+            label: widget.rssFeeds[2].title,
           ),
         ],
         currentIndex: _selectedIndex,

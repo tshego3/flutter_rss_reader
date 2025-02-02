@@ -1,10 +1,10 @@
-class Feed {
+class FeedModel {
   final DateTime pubdate;
   final String title;
   final String description;
   final String url;
 
-  const Feed({
+  const FeedModel({
     required this.pubdate,
     required this.title,
     required this.description,
@@ -20,8 +20,8 @@ class Feed {
     };
   }
 
-  factory Feed.fromJson(Map<String, dynamic> json) {
-    return Feed(
+  factory FeedModel.fromJson(Map<String, dynamic> json) {
+    return FeedModel(
       pubdate: DateTime.parse(json['pubdate']),
       title: json['title'],
       description: json['description'],

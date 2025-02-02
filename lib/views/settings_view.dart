@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../common/constants.dart';
 import '../helpers/settings_helper.dart';
-import '../helpers/theme_provider.dart';
+import '../providers/theme_provider.dart';
 
 class SettingsView extends StatefulWidget {
   const SettingsView({super.key});
@@ -19,7 +20,7 @@ class _SettingsViewState extends State<SettingsView> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Settings'),
+        title: Text(Constants.txtSettings),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -27,7 +28,7 @@ class _SettingsViewState extends State<SettingsView> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             SwitchListTile(
-              title: Text('System Theme'),
+              title: Text(Constants.txtSystemThemee),
               value: themeProvider.useSystemTheme,
               onChanged: (value) {
                 themeProvider.setUseSystemTheme(value);
@@ -35,7 +36,7 @@ class _SettingsViewState extends State<SettingsView> {
             ),
             if (!themeProvider.useSystemTheme)
               SwitchListTile(
-                title: Text('Light/Dark Theme'),
+                title: Text(Constants.txtLighORDarkTheme),
                 value: themeProvider.isDarkMode,
                 onChanged: (value) {
                   themeProvider.setDarkMode(value);
@@ -44,19 +45,19 @@ class _SettingsViewState extends State<SettingsView> {
             TextField(
               controller: _rssFeedController,
               decoration: InputDecoration(
-                labelText: 'RSS Feeds Link',
+                labelText: Constants.txtRSSFeedsLink,
               ),
             ),
             SizedBox(height: 20),
             ElevatedButton(
               onPressed: () async {
-                await SettingsHelper.saveFeedsToPrefs(
-                    'rssFeedsLink',
+                await SettingsHelper.saveSettingToSharedPreferences(
+                    Constants.rssFeedsLink,
                     _rssFeedController.text != ''
                         ? _rssFeedController.text
-                        : 'https://tshego3.github.io/JSRSSFeed/assets/dist/json/feeds.json');
+                        : Constants.rssFeedsLinkValue);
               },
-              child: Text('Save'),
+              child: Text(Constants.txtSave),
             ),
           ],
         ),

@@ -1,13 +1,17 @@
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
 import 'package:xml/xml.dart' as xml;
+import '../common/constants.dart';
+import '../helpers/settings_helper.dart';
 import '../models/feed_model.dart';
+import '../models/rss_model.dart';
 
 class FeedService {
-  Future<List<Feed>> fetchFeeds(String url) async {
-    final response = await http
-        .get(Uri.parse('https://api.codetabs.com/v1/proxy/?quest=$url'));
+  static Future<List<FeedModel>> fetchFeeds(String url) async {
+    final response =
+        await http.get(Uri.parse('${Constants.rssFeedForwardProxy}$url'));
 
     if (response.statusCode == 200) {
       try {
@@ -17,7 +21,7 @@ class FeedService {
           final DateFormat dateFormat =
               DateFormat("EEE, dd MMM yyyy HH:mm:ss Z");
 
-          return Feed(
+          return FeedModel(
             pubdate: dateFormat
                 .parse(element.findElements('pubDate').first.innerText),
             title: element.findElements('title').first.innerText,
@@ -35,7 +39,32 @@ class FeedService {
     } else {
       if (kDebugMode) {
         String responseBody = response.body;
-        print('Failed to load feed: \n$responseBody');
+        print('${Constants.txtFailedToLoadFeeds} \n$responseBody');
+      }
+      return [];
+    }
+  }
+
+  static Future<List<RssModel>> fetchRssFeeds() async {
+    try {
+      final response = await http.get(Uri.parse(
+          await SettingsHelper.loadSettingFromSharedPreferences(
+              Constants.rssFeedsLink)));
+
+      if (response.statusCode == 200) {
+        List<dynamic> jsonList = jsonDecode(response.body) as List<dynamic>;
+        return jsonList
+            .map((json) => RssModel.fromJson(json as Map<String, dynamic>))
+            .toList();
+      } else {
+        if (kDebugMode) {
+          print(Constants.txtFailedToLoadFeeds);
+        }
+        return [];
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print(e);
       }
       return [];
     }

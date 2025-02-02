@@ -6,7 +6,7 @@ import '../models/feed_model.dart';
 class FeedDetailView extends StatelessWidget {
   const FeedDetailView({super.key, required this.feed});
 
-  final Feed feed;
+  final FeedModel feed;
 
   @override
   Widget build(BuildContext context) {
