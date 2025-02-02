@@ -44,22 +44,22 @@ class SettingsHelper {
         Constants.rssFeeds, jsonEncode(feeds));
   }
 
+  static Future<void> loadSettingsFromSharedPreferences() async {
+    await SettingsHelper.saveSettingToSharedPreferences(
+        Constants.rssFeedsLink, Constants.rssFeedsLinkValue);
+    List<RssModel> rssFeeds = await FeedService.fetchRssFeeds();
+    await SettingsHelper.saveSettingToSharedPreferences(
+        Constants.rssFeeds, jsonEncode(rssFeeds));
+  }
+
   static Future<List<RssModel>> fetchRssFeedsAsync(
       {bool bypass = false}) async {
+    await loadSettingsFromSharedPreferences();
     List<RssModel> rssFeeds = await _loadRssFeedsFromSharedPreferences();
     if (rssFeeds.isEmpty || bypass == true) {
       rssFeeds = await FeedService.fetchRssFeeds();
       await _saveRssFeedsToSharedPreferences(rssFeeds);
     }
     return rssFeeds;
-  }
-
-  static Future<void> loadSettingsFromSharedPreferences() async {
-    await SettingsHelper.saveSettingToSharedPreferences(
-        Constants.rssFeedsLink, Constants.rssFeedsLinkValue);
-
-    List<RssModel> rssFeeds = await FeedService.fetchRssFeeds();
-    await SettingsHelper.saveSettingToSharedPreferences(
-        Constants.rssFeeds, jsonEncode(rssFeeds));
   }
 }

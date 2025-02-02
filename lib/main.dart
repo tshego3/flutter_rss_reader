@@ -30,7 +30,7 @@ class _MainAppState extends State<MainApp> {
   @override
   void initState() {
     super.initState();
-    _futureRssFeeds = SettingsHelper.fetchRssFeedsAsync();
+    _futureRssFeeds = SettingsHelper.fetchRssFeedsAsync(bypass: true);
   }
 
   @override
