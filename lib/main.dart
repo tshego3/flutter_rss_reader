@@ -4,7 +4,7 @@ import 'common/constants.dart';
 import 'helpers/settings_helper.dart';
 import 'models/rss_model.dart';
 import 'providers/theme_provider.dart';
-import 'views/feed_view.dart';
+import 'views/feed_list_view.dart';
 
 void main() {
   runApp(
@@ -56,7 +56,8 @@ class _MainAppState extends State<MainApp> {
             themeMode: themeProvider.currentTheme,
             theme: ThemeData.light(),
             darkTheme: ThemeData.dark(),
-            home: FeedView(title: MainApp.appTitle, rssFeeds: snapshot.data!),
+            home:
+                FeedListView(title: MainApp.appTitle, rssFeeds: snapshot.data!),
           );
         } else {
           return MaterialApp(

@@ -9,7 +9,7 @@ class ThemeProvider extends ChangeNotifier {
 
   void setDarkMode(bool value) {
     _isDarkMode = value;
-    _useSystemTheme = false; // Disable system theme if manually set
+    _useSystemTheme = false;
     notifyListeners();
   }
 

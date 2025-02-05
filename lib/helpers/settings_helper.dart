@@ -5,6 +5,11 @@ import '../models/rss_model.dart';
 import '../services/feed_service.dart';
 
 class SettingsHelper {
+  static bool isHtmlContent(String input) {
+    final htmlPattern = RegExp(r'<[^>]+>');
+    return htmlPattern.hasMatch(input);
+  }
+
   static Future<void> clearSettingsFromSharedPreferences() async {
     final sp = await SharedPreferences.getInstance();
     sp.clear();

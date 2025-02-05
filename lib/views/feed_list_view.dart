@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_html/flutter_html.dart';
 import '../common/constants.dart';
 import '../helpers/settings_helper.dart';
 import '../models/rss_model.dart';
@@ -9,17 +10,18 @@ import '../models/feed_model.dart';
 import 'feed_detail_view.dart';
 import 'settings_view.dart';
 
-class FeedView extends StatefulWidget {
-  const FeedView({super.key, required this.title, required this.rssFeeds});
+class FeedListView extends StatefulWidget {
+  const FeedListView({super.key, required this.title, required this.rssFeeds});
 
   final String title;
   final List<RssModel> rssFeeds;
 
   @override
-  State<FeedView> createState() => _FeedViewState();
+  State<FeedListView> createState() => _FeedListViewState();
 }
 
-class _FeedViewState extends State<FeedView> with TickerProviderStateMixin {
+class _FeedListViewState extends State<FeedListView>
+    with TickerProviderStateMixin {
   int _selectedIndex = 0;
   int _selectedIndexTabBar = 0;
   int _selectedIndexBottomNavBar = 0;
@@ -53,10 +55,13 @@ class _FeedViewState extends State<FeedView> with TickerProviderStateMixin {
         final feed = filteredFeeds[index];
         return Card(
           child: ListTile(
-            leading: Icon(Icons.notifications),
             title: Text(feed.title),
-            subtitle: Text(feed.description),
-            trailing: Icon(Icons.more_vert),
+            subtitle: SettingsHelper.isHtmlContent(feed.description)
+                ? Html(
+                    data: feed.description,
+                    doNotRenderTheseTags: {'img', 'a'},
+                  )
+                : Text(feed.description, style: TextStyle(fontSize: 16)),
             onTap: () {
               Navigator.push(
                 context,
@@ -110,8 +115,8 @@ class _FeedViewState extends State<FeedView> with TickerProviderStateMixin {
             _futureFeeds =
                 FeedViewModel.fetchFeedsAsync(widget.rssFeeds[_selectedIndex]);
           } else {
-            _futureFeeds = FeedViewModel.fetchCategoryFeedsAsync(
-                widget.rssFeeds[_selectedIndex].categories[_selectedIndexTabBar]);
+            _futureFeeds = FeedViewModel.fetchCategoryFeedsAsync(widget
+                .rssFeeds[_selectedIndex].categories[_selectedIndexTabBar]);
             _tabController.dispose();
             _tabController = TabController(
                 length: widget.rssFeeds[_selectedIndex].categories.length,
