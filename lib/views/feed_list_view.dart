@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
 import '../common/constants.dart';
 import '../helpers/settings_helper.dart';
+import '../models/rss_category_model.dart';
 import '../models/rss_model.dart';
 import '../viewmodels/feed_viewmodel.dart';
 import '../models/feed_model.dart';
@@ -22,17 +23,38 @@ class FeedListView extends StatefulWidget {
 
 class _FeedListViewState extends State<FeedListView>
     with TickerProviderStateMixin {
-  int _selectedIndex = 0;
+  RssModel _selectedFeedItem =
+      RssModel(id: 0, title: '', url: '', categories: []);
+  final Set<int> _expandedCategories = {};
+
   String _searchQuery = "";
   late Future<List<FeedModel>> _futureFeeds;
   final TextEditingController _searchController = TextEditingController();
 
-  void _onItemTapped(int index) {
+  void _selectFeedItem(RssModel rss) {
     setState(() {
-      _selectedIndex = index;
-      _futureFeeds =
-          FeedViewModel.fetchFeedsAsync(widget.rssFeeds[_selectedIndex]);
+      _selectedFeedItem = rss;
+      _expandedCategories.clear();
+
+      _futureFeeds = FeedViewModel.fetchFeedsAsync(rss);
     });
+    Navigator.pop(context);
+  }
+
+  void _selectCategoryFeedItem(RssCategoryModel rss, int parentId) {
+    setState(() {
+      _selectedFeedItem = RssModel(
+        id: parentId,
+        title: rss.title,
+        url: rss.url,
+        categories: [rss],
+      );
+      _expandedCategories.clear();
+      _expandedCategories.add(parentId);
+
+      _futureFeeds = FeedViewModel.fetchCategoryFeedsAsync(rss);
+    });
+    Navigator.pop(context);
   }
 
   static ListView _buildListView(
@@ -73,7 +95,8 @@ class _FeedListViewState extends State<FeedListView>
   @override
   void initState() {
     super.initState();
-    _futureFeeds = FeedViewModel.fetchFeedsAsync(widget.rssFeeds[0]);
+    _selectedFeedItem = widget.rssFeeds[0];
+    _futureFeeds = FeedViewModel.fetchFeedsAsync(_selectedFeedItem);
   }
 
   @override
@@ -136,27 +159,55 @@ class _FeedListViewState extends State<FeedListView>
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           setState(() {
-            _futureFeeds = FeedViewModel.fetchFeedsAsync(
-                widget.rssFeeds[_selectedIndex],
-                refresh: true);
+            _futureFeeds =
+                FeedViewModel.fetchFeedsAsync(_selectedFeedItem, refresh: true);
           });
         },
         child: Icon(Icons.refresh),
       ),
       drawer: Drawer(
         child: ListView(
+          padding: EdgeInsets.zero,
           children: [
-            ...widget.rssFeeds.map(
-              (rss) => ListTile(
-                leading: Icon(Icons.rss_feed),
-                title: Text(rss.title),
-                selected: _selectedIndex == widget.rssFeeds.indexOf(rss),
-                onTap: () {
-                  _onItemTapped(widget.rssFeeds.indexOf(rss));
-                  Navigator.pop(context);
-                },
-              ),
-            ),
+            ...widget.rssFeeds.map((rss) {
+              if (rss.categories.isNotEmpty) {
+                return ExpansionTile(
+                  leading: Icon(Icons.rss_feed),
+                  title: Text(rss.title),
+                  initiallyExpanded: _expandedCategories.contains(rss.id),
+                  onExpansionChanged: (expanded) {
+                    setState(() {
+                      if (expanded) {
+                        _expandedCategories.add(rss.id);
+                      } else {
+                        _expandedCategories.remove(rss.id);
+                      }
+                    });
+                  },
+                  children: rss.categories.map<Widget>((subItem) {
+                    return ListTile(
+                      leading: Icon(Icons.rss_feed),
+                      title: Text(subItem.title),
+                      selected:
+                          _selectedFeedItem.categories.contains(subItem) ==
+                              true,
+                      onTap: () {
+                        _selectCategoryFeedItem(subItem, rss.id);
+                      },
+                    );
+                  }).toList(),
+                );
+              } else {
+                return ListTile(
+                  leading: Icon(Icons.rss_feed),
+                  title: Text(rss.title),
+                  selected: _selectedFeedItem.id == rss.id,
+                  onTap: () {
+                    _selectFeedItem(rss);
+                  },
+                );
+              }
+            }),
             ListTile(
               leading: Icon(Icons.settings),
               title: const Text(Constants.txtSettings),
