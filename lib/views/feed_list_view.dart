@@ -23,23 +23,16 @@ class FeedListView extends StatefulWidget {
 class _FeedListViewState extends State<FeedListView>
     with TickerProviderStateMixin {
   int _selectedIndex = 0;
-  int _selectedIndexTabBar = 0;
-  int _selectedIndexBottomNavBar = 0;
-
   String _searchQuery = "";
-  late TabController _tabController;
   late Future<List<FeedModel>> _futureFeeds;
   final TextEditingController _searchController = TextEditingController();
 
-  @override
-  void initState() {
-    super.initState();
-    _futureFeeds = FeedViewModel.fetchFeedsAsync(widget.rssFeeds[0]);
-    _tabController = TabController(
-        length: widget.rssFeeds[0].categories.isEmpty
-            ? 1
-            : widget.rssFeeds[0].categories.length,
-        vsync: this);
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+      _futureFeeds =
+          FeedViewModel.fetchFeedsAsync(widget.rssFeeds[_selectedIndex]);
+    });
   }
 
   static ListView _buildListView(
@@ -77,62 +70,10 @@ class _FeedListViewState extends State<FeedListView>
     );
   }
 
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-      if (widget.rssFeeds[_selectedIndex].categories.isEmpty) {
-        _futureFeeds =
-            FeedViewModel.fetchFeedsAsync(widget.rssFeeds[_selectedIndex]);
-      } else {
-        _futureFeeds = FeedViewModel.fetchCategoryFeedsAsync(
-            widget.rssFeeds[_selectedIndex].categories[_selectedIndexTabBar]);
-        _tabController.dispose();
-        _tabController = TabController(
-            length: widget.rssFeeds[_selectedIndex].categories.length,
-            vsync: this);
-      }
-    });
-  }
-
-  void _onItemTappedTabBar(int index) {
-    setState(() {
-      _selectedIndexTabBar = index;
-      _futureFeeds = FeedViewModel.fetchCategoryFeedsAsync(
-          widget.rssFeeds[_selectedIndex].categories[_selectedIndexTabBar]);
-      _tabController.dispose();
-      _tabController = TabController(
-          length: widget.rssFeeds[_selectedIndex].categories.length,
-          vsync: this);
-    });
-  }
-
-  void _onItemTappedBottomNavBar(int index) {
-    setState(() {
-      _selectedIndexBottomNavBar = index;
-      switch (_selectedIndexBottomNavBar) {
-        case 0:
-          if (widget.rssFeeds[_selectedIndex].categories.isEmpty) {
-            _futureFeeds =
-                FeedViewModel.fetchFeedsAsync(widget.rssFeeds[_selectedIndex]);
-          } else {
-            _futureFeeds = FeedViewModel.fetchCategoryFeedsAsync(widget
-                .rssFeeds[_selectedIndex].categories[_selectedIndexTabBar]);
-            _tabController.dispose();
-            _tabController = TabController(
-                length: widget.rssFeeds[_selectedIndex].categories.length,
-                vsync: this);
-          }
-          break;
-        case 1:
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => SettingsView(),
-            ),
-          );
-          break;
-      }
-    });
+  @override
+  void initState() {
+    super.initState();
+    _futureFeeds = FeedViewModel.fetchFeedsAsync(widget.rssFeeds[0]);
   }
 
   @override
@@ -151,7 +92,7 @@ class _FeedListViewState extends State<FeedListView>
           },
         ),
         bottom: PreferredSize(
-          preferredSize: Size.fromHeight(kToolbarHeight + kTextTabBarHeight),
+          preferredSize: Size.fromHeight(kToolbarHeight),
           child: Column(
             children: [
               Padding(
@@ -172,15 +113,6 @@ class _FeedListViewState extends State<FeedListView>
                   },
                 ),
               ),
-              widget.rssFeeds[_selectedIndex].categories.isEmpty
-                  ? Container()
-                  : TabBar(
-                      controller: _tabController,
-                      tabs: widget.rssFeeds[_selectedIndex].categories
-                          .map((category) => Tab(text: category.title))
-                          .toList(),
-                      onTap: _onItemTappedTabBar,
-                    ),
             ],
           ),
         ),
@@ -193,15 +125,7 @@ class _FeedListViewState extends State<FeedListView>
               child: Text(Constants.txtAnErrorHasOccurred),
             );
           } else if (snapshot.hasData) {
-            return widget.rssFeeds[_selectedIndex].categories.isEmpty
-                ? _buildListView(context, snapshot.data!, _searchQuery)
-                : TabBarView(
-                    controller: _tabController,
-                    children: widget.rssFeeds[_selectedIndex].categories
-                        .map((category) => _buildListView(
-                            context, snapshot.data!, _searchQuery))
-                        .toList(),
-                  );
+            return _buildListView(context, snapshot.data!, _searchQuery);
           } else {
             return const Center(
               child: CircularProgressIndicator(),
@@ -212,16 +136,9 @@ class _FeedListViewState extends State<FeedListView>
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           setState(() {
-            if (widget.rssFeeds[_selectedIndex].categories.isEmpty) {
-              _futureFeeds = FeedViewModel.fetchFeedsAsync(
-                  widget.rssFeeds[_selectedIndex],
-                  bypass: true);
-            } else {
-              _futureFeeds = FeedViewModel.fetchCategoryFeedsAsync(
-                  widget.rssFeeds[_selectedIndex]
-                      .categories[_selectedIndexTabBar],
-                  bypass: true);
-            }
+            _futureFeeds = FeedViewModel.fetchFeedsAsync(
+                widget.rssFeeds[_selectedIndex],
+                refresh: true);
           });
         },
         child: Icon(Icons.refresh),
@@ -262,20 +179,6 @@ class _FeedListViewState extends State<FeedListView>
             ),
           ],
         ),
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        items: <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.newspaper),
-            label: Constants.txtNews,
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.settings),
-            label: Constants.txtSettings,
-          ),
-        ],
-        currentIndex: _selectedIndexBottomNavBar,
-        onTap: _onItemTappedBottomNavBar,
       ),
     );
   }

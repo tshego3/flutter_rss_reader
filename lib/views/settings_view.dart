@@ -36,7 +36,7 @@ class _SettingsViewState extends State<SettingsView> {
             ),
             if (!themeProvider.useSystemTheme)
               SwitchListTile(
-                title: Text(Constants.txtLighORDarkTheme),
+                title: Text(Constants.txtDarkMode),
                 value: themeProvider.isDarkMode,
                 onChanged: (value) {
                   themeProvider.setDarkMode(value);

@@ -27,10 +27,10 @@ class FeedViewModel {
   }
 
   static Future<List<FeedModel>> fetchFeedsAsync(RssModel rss,
-      {bool bypass = false}) async {
+      {bool refresh = false}) async {
     List<FeedModel> feeds =
         await _loadFeedFromSharedPreferences('${Constants.rssFeedId}${rss.id}');
-    if (feeds.isEmpty || bypass == true) {
+    if (feeds.isEmpty || refresh == true) {
       feeds = await FeedService.fetchFeeds(rss.url);
       await _saveFeedToSharedPreferences(
           '${Constants.rssFeedId}${rss.id}', feeds);
@@ -40,10 +40,10 @@ class FeedViewModel {
 
   static Future<List<FeedModel>> fetchCategoryFeedsAsync(
       RssCategoryModel rssCategory,
-      {bool bypass = false}) async {
+      {bool refresh = false}) async {
     List<FeedModel> feeds = await _loadFeedFromSharedPreferences(
         '${Constants.rssFeedCategoryId}${rssCategory.id}');
-    if (feeds.isEmpty || bypass == true) {
+    if (feeds.isEmpty || refresh == true) {
       feeds = await FeedService.fetchFeeds(rssCategory.url);
       await _saveFeedToSharedPreferences(
           '${Constants.rssFeedCategoryId}${rssCategory.id}', feeds);

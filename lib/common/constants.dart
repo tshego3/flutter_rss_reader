@@ -15,7 +15,7 @@ class Constants {
   static const String txtSettings = 'Settings';
   static const String txtSearch = 'Search...';
   static const String txtSystemThemee = 'System Theme';
-  static const String txtLighORDarkTheme = 'Light/Dark Theme';
+  static const String txtDarkMode = 'Dark mode';
   static const String txtRSSFeedsLink = 'RSS Feeds Link';
   static const String txtFailedToLoadFeeds = 'Failed to load feeds!';
   static const String txtAnErrorHasOccurred = 'An error has occurred!';
